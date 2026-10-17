@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Retail Key</title>
+<meta name="description" content="See exactly how many points every loyalty card holds, and show the right barcode at the till.">
+<meta name="theme-color" content="#0b0e22">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Retail Key">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="bricolage.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="brand"><svg class="brand-key" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-key"/></svg><span>retail key</span></div>
+  <div class="total" id="total" hidden><span class="total-l">in your cards</span><b id="totalVal">R 0,00</b></div>
+</header>
+
+<main id="main">
+  <section class="view" id="v-wallet" aria-label="Wallet"></section>
+  <section class="view" id="v-activity" aria-label="Activity" hidden></section>
+  <section class="view" id="v-settings" aria-label="Settings" hidden></section>
+</main>
+
+<nav class="dock" aria-label="Main">
+  <button data-nav="wallet" class="on" aria-current="page"><svg viewBox="0 0 24 24"><use href="#i-wallet"/></svg><span>Wallet</span></button>
+  <button data-act="add-menu" class="plus" aria-label="Add a card or read a slip"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg></button>
+  <button data-nav="activity"><svg viewBox="0 0 24 24"><use href="#i-pulse"/></svg><span>Activity</span></button>
+  <button data-nav="settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg><span>Settings</span></button>
+</nav>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<!-- ============ dialogs ============ -->
+<dialog id="d-menu" class="sheet">
+  <div class="sheet-in">
+    <header class="sh"><h2>Add to your wallet</h2><button class="x" data-close aria-label="Close">✕</button></header>
+    <div class="big-list">
+      <button data-act="scan-new"><svg viewBox="0 0 24 24"><use href="#i-scan"/></svg><span><b>Scan a card</b><small>Point the camera at its barcode</small></span></button>
+      <button data-act="add-card"><svg viewBox="0 0 24 24"><use href="#i-type"/></svg><span><b>Type a card number</b><small>Pick the shop and enter the number</small></span></button>
+      <button data-act="slip"><svg viewBox="0 0 24 24"><use href="#i-slip"/></svg><span><b>Read a slip or SMS</b><small>Paste it and your balance updates</small></span></button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="d-card" class="sheet">
+  <form class="sheet-in" id="f-card" autocomplete="off" novalidate>
+    <header class="sh"><h2 id="f-card-title">New card</h2><button type="button" class="x" data-close aria-label="Close">✕</button></header>
+    <label class="fld"><span>Shop or programme</span>
+      <input id="c-retailer" list="dl-retailers" maxlength="60" placeholder="e.g. Clicks ClubCard" required>
+      <datalist id="dl-retailers"></datalist></label>
+    <label class="fld"><span>Card number</span>
+      <div class="row"><input id="c-number" inputmode="text" maxlength="100" placeholder="Number under the barcode" required><button type="button" class="btn ghost" data-act="scan-into">Scan</button></div>
+      <small>Only the barcode number. Never a PIN or password.</small></label>
+    <label class="fld"><span>Barcode type</span>
+      <select id="c-format"><option value="auto">Automatic</option><option value="code128">Code 128</option><option value="ean13">EAN-13</option><option value="ean8">EAN-8</option><option value="code39">Code 39</option><option value="qr">QR code</option></select>
+      <small id="c-format-hint">Pick the type printed on your plastic card if the till doesn’t accept the first try.</small></label>
+    <fieldset class="fld"><legend>What does this card collect?</legend>
+      <div class="seg" id="c-kind">
+        <label><input type="radio" name="kind" value="points" checked><span>Points</span></label>
+        <label><input type="radio" name="kind" value="cashback"><span>Cashback</span></label>
+        <label><input type="radio" name="kind" value="stamps"><span>Stamps</span></label>
+      </div></fieldset>
+    <div class="grid2" data-for="points">
+      <label class="fld"><span>Points per R1 spent</span><input id="c-ppr" inputmode="decimal" placeholder="0.1"><small>0,1 means 1 point per R10. Leave empty to type points from slips.</small></label>
+      <label class="fld"><span>One point is worth (R)</span><input id="c-pv" inputmode="decimal" placeholder="0.01"><small>Shows what your points are worth in Rand.</small></label>
+    </div>
+    <div class="grid2" data-for="cashback" hidden>
+      <label class="fld"><span>Cashback rate (%)</span><input id="c-pct" inputmode="decimal" placeholder="2"><small>Percent of each purchase that comes back.</small></label>
+    </div>
+    <div class="grid2" data-for="stamps" hidden>
+      <label class="fld"><span>Stamps for a reward</span><input id="c-goal-s" inputmode="numeric" placeholder="10"></label>
+      <label class="fld"><span>Minimum spend per stamp (R)</span><input id="c-min" inputmode="decimal" placeholder="0"></label>
+    </div>
+    <div class="grid2">
+      <label class="fld" data-for="points cashback"><span>Next reward at</span><input id="c-goal" inputmode="decimal" placeholder="Optional"><small>Draws a progress bar on the card.</small></label>
+      <label class="fld"><span>Points expire on</span><input id="c-expiry" type="date"><small>Optional. You’ll get a warning.</small></label>
+    </div>
+    <label class="fld" id="c-start-wrap"><span>Balance right now</span><input id="c-start" inputmode="decimal" placeholder="From your last slip or the shop’s app"><small>This becomes your first confirmed balance. You can add it later.</small></label>
+    <fieldset class="fld"><legend>Card colour</legend><div class="sw" id="c-sw"></div></fieldset>
+    <div class="acts"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn" type="submit">Save card</button></div>
+  </form>
+</dialog>
+
+<dialog id="d-scan" class="sheet">
+  <div class="sheet-in">
+    <header class="sh"><h2>Scan a barcode</h2><button type="button" class="x" data-close aria-label="Close">✕</button></header>
+    <div class="viewfinder"><video id="s-video" playsinline muted></video><i class="vf a"></i><i class="vf b"></i><i class="vf c"></i><i class="vf d"></i><div class="laser"></div></div>
+    <p class="hint" id="s-status">Starting camera…</p>
+    <label class="btn ghost file">Scan from a photo<input id="s-file" type="file" accept="image/*" capture="environment" hidden></label>
+    <label class="fld"><span>Or type the number</span><div class="row"><input id="s-manual" placeholder="Barcode number"><button type="button" class="btn" id="s-use">Use</button></div></label>
+  </div>
+</dialog>
+
+<dialog id="d-log" class="sheet">
+  <form class="sheet-in" id="f-log" autocomplete="off" novalidate>
+    <header class="sh"><h2 id="l-title">Log activity</h2><button type="button" class="x" data-close aria-label="Close">✕</button></header>
+    <div class="seg" id="l-type">
+      <label><input type="radio" name="ltype" value="earn" checked><span id="l-t-earn">Earned</span></label>
+      <label><input type="radio" name="ltype" value="redeem"><span id="l-t-redeem">Used</span></label>
+      <label><input type="radio" name="ltype" value="adjust"><span>Correct</span></label>
+    </div>
+    <label class="fld" data-lf="earn"><span>You spent (R)</span><input id="l-spend" inputmode="decimal" placeholder="598,35"></label>
+    <label class="fld" data-lf="earn redeem adjust"><span id="l-amt-label">Points earned</span><input id="l-amt" inputmode="decimal" placeholder="0"><small id="l-amt-hint"></small></label>
+    <label class="fld"><span>Date</span><input id="l-date" type="date"></label>
+    <label class="fld"><span>Note</span><input id="l-note" maxlength="80" placeholder="Optional"></label>
+    <div class="acts"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn" type="submit" id="l-save">Save</button></div>
+  </form>
+</dialog>
+
+<dialog id="d-confirm" class="sheet">
+  <form class="sheet-in" id="f-confirm" autocomplete="off" novalidate>
+    <header class="sh"><h2 id="k-title">Confirm balance</h2><button type="button" class="x" data-close aria-label="Close">✕</button></header>
+    <p class="hint">Type what your latest slip, SMS or the shop’s app says. Retail Key counts everything after this moment on top of it.</p>
+    <label class="fld"><span id="k-label">Balance</span><input id="k-val" inputmode="decimal" placeholder="0" required></label>
+    <label class="fld"><span>As at</span><input id="k-date" type="date"></label>
+    <div class="acts"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn" type="submit">Confirm</button></div>
+    <div class="sep"></div>
+    <button type="button" class="btn ghost wide" data-act="slip-from-confirm">Read it from a slip or SMS instead</button>
+  </form>
+</dialog>
+
+<dialog id="d-slip" class="sheet">
+  <div class="sheet-in" id="slip-in">
+    <header class="sh"><h2>Read a slip or SMS</h2><button type="button" class="x" data-close aria-label="Close">✕</button></header>
+    <label class="fld"><span>Paste the text</span><textarea id="sl-text" rows="5" placeholder="Paste the till slip text or the SMS from the shop"></textarea></label>
+    <div class="row"><button type="button" class="btn ghost" data-act="slip-paste">Paste from clipboard</button><button type="button" class="btn" data-act="slip-read">Read it</button></div>
+    <div id="sl-out"></div>
+  </div>
+</dialog>
+
+<dialog id="d-hist" class="sheet tall">
+  <div class="sheet-in" id="hist-in"></div>
+</dialog>
+
+<dialog id="d-till" class="till" aria-label="Show at till">
+  <div class="till-in" id="till-in"></div>
+</dialog>
+
+<dialog id="d-ask" class="sheet small">
+  <form method="dialog" class="sheet-in">
+    <h2 id="a-title">Are you sure?</h2><p class="hint" id="a-body"></p>
+    <div class="acts"><button value="no" class="btn ghost">Cancel</button><button value="yes" class="btn danger" id="a-ok">Delete</button></div>
+  </form>
+</dialog>
+
+<!-- icons -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-key" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M14.5 9.5a4.5 4.5 0 1 1-1.3-3.2M13.2 6.3 21 6.3 M17.5 6.3v3M20.5 6.3v2"/><circle cx="8" cy="12" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 8.5A2.5 2.5 0 0 1 6.5 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6.5A2.5 2.5 0 0 1 4 16.5zM4 8.5A2.5 2.5 0 0 0 6.5 11H20M16 14.8h.01"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3 12h4l2.5-6 4 12 2.5-6H21"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/></g></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M7 12h10"/></symbol>
+  <symbol id="i-type" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 7h16v10H4zM7.5 10.5h.01M10.5 10.5h.01M13.5 10.5h.01M7.5 13.5h9"/></symbol>
+  <symbol id="i-slip" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3"/></symbol>
+  <symbol id="i-till" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 5v14M8 5v14M12 5v14M15 5v14M19 5v14"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-hist" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4M12 8v4.5l3 1.8"/></symbol>
+</defs></svg>
+
+<script src="codes.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

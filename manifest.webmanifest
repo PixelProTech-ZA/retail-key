@@ -1,0 +1,25 @@
+{
+  "id": "./index.html",
+  "name": "Retail Key — your loyalty points, exact",
+  "short_name": "Retail Key",
+  "description": "See exactly how many points every loyalty card holds, and show the right barcode at the till.",
+  "lang": "en-ZA",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0e22",
+  "theme_color": "#0b0e22",
+  "categories": ["shopping", "finance", "lifestyle"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Read a slip or SMS", "short_name": "Read slip", "url": "./index.html?a=slip", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Add a card", "short_name": "Add card", "url": "./index.html?a=add", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+  ],
+  "share_target": { "action": "./index.html", "method": "GET", "params": { "title": "title", "text": "text", "url": "url" } }
+}
