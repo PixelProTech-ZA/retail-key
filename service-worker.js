@@ -1,5 +1,5 @@
 /* Retail Key service worker — one per folder. Bump VERSION whenever any file changes. */
-const VERSION = 'retail-key-v2.0.1';
+const VERSION = 'retail-key-v2.0.2';
 const FILES = [
   './', 'index.html', 'app.css', 'app.js', 'engine.js', 'codes.js', 'bricolage.woff2',
   'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-32.png'

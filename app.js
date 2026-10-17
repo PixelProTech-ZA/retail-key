@@ -133,7 +133,7 @@
   }
   function detailLine(c, b) {
     var pct = b.progress != null ? Math.floor(b.progress * 100) + '% to ' + E.amountFor(c, b.goal) : '';
-    var d = b.status === 'tracked' ? signed(c, b.since) + ' since confirmed' : b.status === 'unanchored' ? 'Confirm a balance to make it exact' : '';
+    var d = b.status === 'tracked' ? signed(c, b.since) + ' since' : b.status === 'unanchored' ? 'Confirm a balance to make it exact' : '';
     return [pct, d].filter(Boolean).join(' · ');
   }
   function cardHTML(c, idx, deal) {
@@ -142,7 +142,7 @@
     var unit = c.kind === 'cashback' ? '' : c.kind === 'stamps' ? (b.goal ? 'of ' + E.count(b.goal) + ' stamps' : 'stamps') : 'points';
     var chip = '';
     if (ex && ex.level === 'expired') chip = '<span class="chip bad">Expired</span>';
-    else if (ex && (ex.level === 'soon' || ex.level === 'near')) chip = '<span class="chip' + (ex.level === 'soon' ? ' warn' : '') + '">Expires in ' + ex.days + (ex.days === 1 ? ' day' : ' days') + '</span>';
+    else if (ex && (ex.level === 'soon' || ex.level === 'near')) chip = '<span class="chip' + (ex.level === 'soon' ? ' warn' : '') + '">' + ex.days + (ex.days === 1 ? ' day left' : ' days left') + '</span>';
     else if (b.stale) chip = '<span class="chip warn">Check balance</span>';
     var bar = b.progress != null ? '<span class="bar"><i style="--p:' + b.progress.toFixed(3) + '"></i></span>' : '';
     var tail = '•••• ' + esc(c.number.replace(/\s/g, '').slice(-4));
